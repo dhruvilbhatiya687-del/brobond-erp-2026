@@ -1,109 +1,128 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
+import io
 import os
 
-# --- PAGE CONFIG ---
-st.set_page_config(page_title="BROBOND ERP", layout="wide")
+# --- PAGE CONFIGURATION ---
+st.set_page_config(page_title="BROBOND ERP", page_icon="⚪", layout="wide")
 
-# --- CSS EKDUM SAME TO SAME PHOTO WALA ---
+# Column Definitions
+CRM_COLUMNS = [
+    "Lead", "Owner", "First Name", "Last Name", "Email", 
+    "Mobile Country Code", "Mobile", "Designation", 
+    "Phone Country Code", "Phone", "Lead Source", "Sub Lead Source", 
+    "Lead Status", "Industry", "Department", "Annual Revenue", 
+    "Company Name", "Country", "State", "City", "Street", 
+    "Pincode", "Lead Priority", "Description", "Product Category", "Date"
+]
+
+EXPENSE_COLUMNS = ["Date", "Category", "Amount", "Paid To", "Payment Mode", "Description", "Status"]
+
+# Initializing Session States
+if 'temp_data' not in st.session_state: st.session_state.temp_data = pd.DataFrame(columns=CRM_COLUMNS)
+if 'expense_data' not in st.session_state: st.session_state.expense_data = pd.DataFrame(columns=EXPENSE_COLUMNS)
+if "page" not in st.session_state: st.session_state.page = "Dashboard"
+
+# --- STYLING (SAME TO SAME AS PHOTO REQUEST) ---
 st.markdown("""
     <style>
-    /* 1. Sidebar Clean Look aur Black Line Removal */
+    /* 1. Sidebar Black Line Removal */
     [data-testid="stSidebar"] {
         background-color: #f8f9fa !important;
         border-right: none !important;
     }
     
-    /* 2. Sidebar Padding khatam taaki buttons wall touch karein */
+    /* 2. Sidebar Padding Reset for Wall-to-Wall Buttons */
     [data-testid="stSidebarContent"] {
         padding: 0px !important;
     }
 
-    /* 3. Branding Section (Top Header) */
-    .brand-container {
-        padding: 40px 10px 20px 10px;
-        text-align: center;
-    }
-    .brand-name {
-        font-size: 48px;
-        font-weight: 900;
-        color: #000;
-        margin-bottom: 0px;
-        line-height: 1;
-    }
-    .brand-tagline {
-        font-size: 14px;
-        font-weight: 800;
-        color: #444;
-        letter-spacing: 2px;
-        margin-top: 5px;
-    }
-
-    /* 4. MAIN CATEGORY LABEL Styling */
-    .category-label {
-        padding: 15px;
-        text-align: center;
-        font-weight: 800;
-        font-size: 18px;
-        color: #333;
-        border-top: 1px solid #eee;
-        border-bottom: 1px solid #eee;
-        background-color: #fcfcfc;
-    }
-
-    /* 5. FULL WIDTH BUTTONS (SAME AS PHOTO) */
-    div.stButton > button {
-        width: 100% !important;
-        border-radius: 0px !important; /* Wall to wall touch */
-        height: 65px !important;
-        font-weight: 700 !important;
-        font-size: 18px !important;
-        background-color: white !important;
-        border: none !important;
-        border-bottom: 1px solid #f0f0f0 !important;
-        margin: 0px !important;
-        color: #444 !important;
-        text-align: left !important;
-        padding-left: 30px !important;
+    /* 3. Branding Styles */
+    .brand-name { font-size: 56px; font-weight: 900; color: #000; text-align: center; line-height: 0.9; padding-top: 30px; }
+    .brand-tagline { font-size: 18px; font-weight: 700; color: #444; text-align: center; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; }
+    
+    .category-label { 
+        text-align: center; font-weight: 900; font-size: 20px; 
+        background-color: #eee; padding: 10px; border-bottom: 1px solid #ddd;
     }
     
-    /* Hover effect for buttons */
-    div.stButton > button:hover {
-        background-color: #f1f1f1 !important;
-        color: #ff4b4b !important;
+    /* 4. BIG WALL-TO-WALL BUTTONS */
+    div.stButton > button { 
+        width: 100% !important; 
+        border-radius: 0px !important; /* Deewar se touch */
+        height: 75px !important; 
+        font-weight: 800 !important; 
+        font-size: 22px !important; 
+        background-color: white !important; 
+        border: none !important;
+        border-bottom: 1px solid #eee !important;
+        margin: 0px !important; 
+        color: #000 !important;
     }
 
-    /* Active page highlight */
-    div.stButton > button:focus {
-        border-left: 5px solid #ff4b4b !important;
-        background-color: #fdf2f2 !important;
+    div.stButton > button:hover {
+        background-color: #f1f1f1 !important;
     }
+    
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 14px !important; height: 14px !important; display: block !important; }
+    ::-webkit-scrollbar-track { background: #f1f1f1 !important; }
+    ::-webkit-scrollbar-thumb { background: #555 !important; border-radius: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SIDEBAR CONTENT ---
+# --- SIDEBAR ---
 with st.sidebar:
-    # Top Branding
-    st.markdown('<div class="brand-container">', unsafe_allow_html=True)
-    st.markdown('<div class="brand-name">BROBOND</div>', unsafe_allow_html=True)
-    st.markdown('<div class="brand-tagline">A BRAND BY SNBPL</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div class="brand-name">BROBOND</div><div class="brand-tagline">A Brand by SNBPL</div>', unsafe_allow_html=True)
+    st.markdown('<div class="category-label">📋 MAIN CATEGORIES</div>', unsafe_allow_html=True)
     
-    st.markdown('<div class="category-label">📋 MAIN CATEGORIES</div>', unsafe_allow_html=True) #
+    # Wall-to-Wall Buttons
+    if st.button("📊 SALES DASHBOARD"): st.session_state.page = "Dashboard"
+    if st.button("📞 LEADS DATA"): st.session_state.page = "Leads"
+    if st.button("💸 EXPENSES"): st.session_state.page = "Expenses"
+    if st.button("👤 AYUSH (HRM)"): st.session_state.page = "HRM"
+    if st.button("👑 HIMANSHU (CEO)"): st.session_state.page = "CEO"
+    if st.button("💼 RITIK (MD)"): st.session_state.page = "Ritik"
+
+# --- LEADS PAGE ---
+if st.session_state.page == "Leads":
+    st.markdown("# 🛡️ MASTER LEAD DATABASE")
+    with st.expander("📥 BULK IMPORT EXCEL", expanded=True):
+        files = st.file_uploader("Upload Excel", type=["xlsx"], accept_multiple_files=True)
+        if st.button("IMPORT ALL FILES"):
+            if files:
+                all_data = [pd.read_excel(f).reindex(columns=CRM_COLUMNS, fill_value="") for f in files]
+                st.session_state.temp_data = pd.concat(all_data, ignore_index=True)
+                st.success("Data imported.")
     
-    # Category Buttons - Full Width Wall-to-Wall
-    if st.button("📊  SALES DASHBOARD"): st.session_state.page = "Dashboard"
-    if st.button("📞  LEADS DATA"): st.session_state.page = "Leads"
-    if st.button("💸  EXPENSES"): st.session_state.page = "Expenses"
-    if st.button("👤  AYUSH (HRM)"): st.session_state.page = "HRM"
-    if st.button("👑  HIMANSHU (CEO)"): st.session_state.page = "CEO"
-    if st.button("💼  RITIK (MD)"): st.session_state.page = "Ritik"
+    if not st.session_state.temp_data.empty:
+        col1, col2 = st.columns(2)
+        with col1:
+            prod_opts = st.session_state.temp_data['Lead Status'].unique().tolist()
+            sel_prod = st.multiselect("🔍 Search Product (Lead Status)", options=prod_opts) #
+        with col2:
+            state_opts = st.session_state.temp_data['State'].unique().tolist()
+            sel_state = st.multiselect("📍 Search by State", options=state_opts) #
+        
+        df = st.session_state.temp_data.copy()
+        if sel_prod: df = df[df['Lead Status'].isin(sel_prod)]
+        if sel_state: df = df[df['State'].isin(sel_state)]
+        
+        # Sequence 1 to N
+        df.index = range(1, len(df) + 1)
+        st.dataframe(df, use_container_width=True, height=600)
+        
+        if st.button("🗑️ CLEAR ALL LEAD DATA"):
+            st.session_state.temp_data = pd.DataFrame(columns=CRM_COLUMNS)
+            st.rerun()
 
-# --- MAIN PAGE LOGIC ---
-if "page" not in st.session_state: st.session_state.page = "Dashboard"
+# --- EXPENSES PAGE ---
+elif st.session_state.page == "Expenses":
+    st.markdown("# 💸 EXPENSE MANAGEMENT")
+    if not st.session_state.expense_data.empty:
+        st.dataframe(st.session_state.expense_data, use_container_width=True)
 
-# Page Heading
-st.markdown(f"# {st.session_state.page}")
-
-if st.session_state.page == "Dashboard":
-    st.write("Module active.")
+else:
+    st.markdown(f"# {st.session_state.page}")
+    st.info("Module active.")
