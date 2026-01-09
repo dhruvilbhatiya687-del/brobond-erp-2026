@@ -5,52 +5,49 @@ import os
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="BROBOND ERP", layout="wide")
 
-# --- CSS FIX FOR BUTTONS AND SIDEBAR ---
+# --- CSS FIX FOR FULL-WIDTH BUTTONS & CLEAN SIDEBAR ---
 st.markdown("""
     <style>
-    /* 1. Sidebar width aur background fix */
+    /* 1. Sidebar se woh black line hatane ke liye */
     [data-testid="stSidebar"] {
-        min-width: 380px !important;
-        max-width: 380px !important;
         background-color: #f8f9fa;
-        border-right: none !important; /* Woh black line hatane ke liye */
+        border-right: none !important;
     }
     
-    /* 2. Sidebar ke andar ka extra gap khatam karne ke liye */
+    /* 2. Sidebar ka extra gap khatam karne ke liye */
     [data-testid="stSidebarContent"] {
-        padding-top: 20px !important;
+        padding-top: 10px !important;
         padding-left: 0px !important;
         padding-right: 0px !important;
     }
 
-    /* 3. CATEGORY BUTTONS: Full width aur bada font */
+    /* 3. Branding Header Styling */
+    .brand-name { font-size: 50px; font-weight: 900; color: #000; text-align: center; line-height: 0.9; margin-bottom: 0px; }
+    .brand-tagline { font-size: 16px; font-weight: 700; color: #444; text-align: center; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+    
+    /* 4. CATEGORY BUTTONS: Full width fix */
     div.stButton > button {
-        width: 100% !important;   /* Button ko sidebar ki poori choudai di */
-        border-radius: 0px !important; /* Button ko corner tak touch karne ke liye */
-        height: 75px !important;
+        width: 100% !important;   /* Button ko poora corner tak touch karne ke liye */
+        border-radius: 0px !important; 
+        height: 70px !important;
         font-weight: 800 !important;
-        font-size: 24px !important;
+        font-size: 22px !important;
         background-color: white !important;
-        border: 1px solid #eee !important;
-        margin-bottom: 5px !important;
-        color: #333 !important;
+        border-top: 1px solid #eee !important;
+        border-bottom: 1px solid #eee !important;
+        border-left: none !important;
+        border-right: none !important;
+        margin-bottom: 0px !important;
+        color: #000 !important;
+        transition: 0.3s;
+    }
+    div.stButton > button:hover {
+        background-color: #f0f2f6 !important;
     }
 
-    /* Branding Section */
-    .brand-section {
-        text-align: center;
-        margin-bottom: 20px;
-        padding: 10px;
-    }
-    
     .category-label {
-        text-align: center;
-        font-weight: 900;
-        font-size: 22px;
-        margin-top: 10px;
-        margin-bottom: 20px;
-        color: #000;
-        border-bottom: 2px solid #ddd;
+        text-align: center; font-weight: 900; font-size: 20px; 
+        margin-top: 20px; margin-bottom: 10px; color: #333;
         padding-bottom: 10px;
     }
     </style>
@@ -58,16 +55,14 @@ st.markdown("""
 
 # --- SIDEBAR CONTENT ---
 with st.sidebar:
-    st.markdown('<div class="brand-section">', unsafe_allow_html=True)
-    if os.path.exists("LOGO.png"):
-        st.image("LOGO.png", use_container_width=True) #
-    else:
-        st.markdown("<h1 style='text-align:center;'>BROBOND ERP</h1>", unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Branding wapas jaisa pehle tha
+    st.markdown('<div class="brand-name">BROBOND</div>', unsafe_allow_html=True)
+    st.markdown('<div class="brand-tagline">A Brand by SNBPL</div>', unsafe_allow_html=True)
     
+    st.write("---")
     st.markdown('<div class="category-label">📋 MAIN CATEGORIES</div>', unsafe_allow_html=True) #
     
-    # Buttons jo poore sidebar jitne wide honge
+    # Ye buttons ab full width dikhenge
     if st.button("📊 SALES DASHBOARD"): st.session_state.page = "Dashboard"
     if st.button("📞 LEADS DATA"): st.session_state.page = "Leads"
     if st.button("💸 EXPENSES"): st.session_state.page = "Expenses"
@@ -78,5 +73,10 @@ with st.sidebar:
 # --- MAIN PAGE LOGIC ---
 if "page" not in st.session_state: st.session_state.page = "Dashboard"
 
-st.title(f"🚀 {st.session_state.page}")
-st.write("Bhai, sidebar aur buttons ab ekdum fix hain.")
+# Page content jisme koi faltu Hindi text nahi hoga
+if st.session_state.page == "Dashboard":
+    st.markdown(f"## 🚀 {st.session_state.page}")
+    st.info("Welcome to BROBOND ERP Dashboard")
+else:
+    st.markdown(f"## 📋 {st.session_state.page}")
+    st.write(f"Section for {st.session_state.page} is active.")
